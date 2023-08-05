@@ -1,0 +1,51 @@
+#cart {
+    margin-right: 20px;
+    position: relative;
+    cursor: pointer;
+}
+#cart .bi-cart-fill {
+    color: black;
+}
+#cart .bi-cart-fill:hover {
+    color: rgb(86, 81, 51);
+}
+#cart span {
+    font-size: 20pt;
+}
+#cart .num-cart {
+    position: absolute;
+    top: -6px;
+    left: 18px;
+    width: 26px;
+    height: 26px;
+    line-height: 26px;
+    border-radius: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    font-size: 12pt;
+    font-weight: bold;
+    background-color: #B9C997;
+    /* color: #616A4D; */
+    color: red;
+    transform: scale(1);
+    transition: all 600ms;
+}
+
+#cart .animate {
+    transform: scale(1.3);
+}
+
+#cart-model .modal-content {
+    border-radius: 1rem !important;
+}
+
+@media (min-width: 900px) {
+    #cart-model .modal-dialog {
+        max-width: 800px;
+        margin: 1.75rem auto;
+    }
+}
+
+#cart-table {
+    display: table !important;
+}

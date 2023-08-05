@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SHABU 點餐系統 - 系統錯誤</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="modal fade" id="error-modal" data-backdrop="static"
+         data-keyboard="false" tabindex="-1"
+         aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel" style="color: #9A9667;"> SHABU 點餐系統 </h5>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger" role="alert" id="errorMessage">
+                        系統錯誤，請告知櫃檯重新申請QRcode，再進行點餐
+                    </div>
+                </div>
+                <div class="modal-footer"></div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js" integrity="sha384-+sLIOodYLS7CIrQpBjl+C7nPvqq+FbNUBDunl/OZv93DB7Ln/533i8e/mZXLi/P+" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+        // 顯示 modal8+
+        $('#error-modal').modal('show');
+
+        // 禁止使用上一頁 (將歷史紀錄推入新狀態，只有/error這網址)
+        $(window).on('popstate', function (event) {
+            console.log(`on popstate, title: ${document.title}, href: ${location.href}`);
+            event.preventDefault();
+            history.pushState(null, "SHABU 點餐系統 - 系統錯誤", location.href)
+        });
+    </script>
+</body>
+</html>

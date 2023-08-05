@@ -1,0 +1,37 @@
+body {
+    scroll-behavior: smooth;
+}
+.carousel-indicators li {
+    background-color: gray;
+}
+.carousel-control-next,
+.carousel-control-prev {
+    filter: invert(100%);
+}
+
+.navbar-dark {
+    font-size: large;
+}
+.navbar-brand:hover {
+    color: black !important;
+}
+
+.nav-link:hover {
+    color: black !important;
+}
+.nav-link::after {
+    content: '';
+    height: 2px;
+    width: 0;
+    display: inherit;
+    position: relative;
+    border-bottom: 0 solid white;
+    bottom: 0;
+    left: 50%;
+    transition: all linear 0.25s;
+}
+.nav-link:hover::after {
+    left: 0;
+    width: 100%;
+    border-bottom-width: 2px;
+}
