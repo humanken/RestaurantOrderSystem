@@ -4,7 +4,6 @@ from django.http import Http404, JsonResponse
 from django.db.models import QuerySet
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, render
 from rest_framework import serializers, status
 from rest_framework.response import Response
@@ -16,10 +15,10 @@ from Menu.views import MenuSerializer, MenuModel
 from .models import TableNumberModel, OrderModel
 
 
-@receiver(post_save, sender=User)  # Django 信號機制
+@receiver(post_save, sender=TableNumberModel)  # Django 信號機制
 def generate_token(sender, instance=None, created=False, **kwargs):
     """
-    創建用戶時自動生成Token
+    創建桌號時自動生成Token
 
     :param sender:
     :param instance:
@@ -74,7 +73,7 @@ class OrderSerializer(serializers.ModelSerializer):
         return data
 
 
-class OrderView(APIView):
+class Order(APIView):
 
     def get(self, request):
         """
@@ -156,7 +155,7 @@ class OrderView(APIView):
         return Response(data=OrderSerializer(instance=order_obj).data, status=status.HTTP_204_NO_CONTENT)
 
 
-class TableNumberView(APIView):
+class TableNumber(APIView):
 
     def get(self, request):
         """
@@ -231,7 +230,7 @@ class TableNumberView(APIView):
         return Response(data='delete success', status=status.HTTP_204_NO_CONTENT)
 
 
-class SendView(APIView):
+class Send(APIView):
 
     def get(self, request):
         return Response(status=status.HTTP_200_OK)
