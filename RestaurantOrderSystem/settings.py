@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',   # RESTful API
-    # 'rest_framework.authtoken',     # DRF自帶的Token認證
+    'rest_framework.authtoken',     # DRF自帶的Token認證
     'Menu',
     'Order',
 ]
