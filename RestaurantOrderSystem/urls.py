@@ -17,15 +17,15 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.documentation import include_docs_urls
-import views
+from .views import menu_order_view, waiting_view, error_view, login_view
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.menu_order_view),
-    path('waiting/<int:tb_number_id>', views.waiting_view),
-    path('error/', views.error_view),
-    path('login/', views.login_view),
+    path('', menu_order_view),
+    path('waiting/<int:tb_number_id>', waiting_view),
+    path('error/', error_view),
+    path('login/', login_view),
     # ------------------ api --------------------
     path('api/', include('TableNumber.urls')),
     path('api/', include('Menu.urls')),
