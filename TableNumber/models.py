@@ -17,4 +17,4 @@ class TableNumberModel(models.Model):
 
 
 class TableNumberAdmin(admin.ModelAdmin):
-    list_display = ("number", "check_out", "create_at", "update_at")
+    list_display = ("number", "is_send", "check_out", "create_at", "update_at")

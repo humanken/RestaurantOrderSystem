@@ -36,11 +36,11 @@ class OrderSerializer(serializers.ModelSerializer):
             return data
 
         for order in instance:
-            number = order.table_number.number
+            tb_id = order.table_number.id
             check_out = order.table_number.check_out
             meal = {'detail': MenuSerializer(instance=order.detail).data, 'quantity': order.quantity}
-            data[number]['meals'] = data[number].get('meals', []) + [meal]
-            data[number]['checkOut'] = check_out
+            data[tb_id]['meals'] = data[tb_id].get('meals', []) + [meal]
+            data[tb_id]['checkOut'] = check_out
         return data
 
 
@@ -61,11 +61,10 @@ class Order(APIView):
             return Response(data=s.data, status=status.HTTP_200_OK)
         else:
             tb_number = TableNumberModel.objects.get(
-                number=request.query_params.get('tbNumberID'),
-                check_out=False
+                id=request.query_params.get('tbNumberID')
             )
             data = {
-                f'{tb_number.number}': {'meals': [], 'checkOut': tb_number.check_out}
+                f'{tb_number.id}': {'meals': [], 'checkOut': tb_number.check_out}
             }
             return JsonResponse(data=data, status=status.HTTP_200_OK)
 

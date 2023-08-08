@@ -2,7 +2,7 @@ import { TableNumberManger } from "./table_number.js";
 import { OrderMealsManger } from "./meals.js";
 
 (async function ($) {
-    const tbNumberID = 2
+    const tbNumberID = 1;
     await TableNumberManger.checkRedirect(tbNumberID);
 
     const sendApiUrl = location.origin + '/api/send/'

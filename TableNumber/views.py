@@ -31,19 +31,19 @@ class Login(APIView):
         return Response(data=resp)
 
 
-@receiver(post_save, sender=TableNumberModel)  # Django 信號機制
-def generate_token(sender, instance=None, created=False, **kwargs):
-    """
-    創建桌號時自動生成Token
-
-    :param sender:
-    :param instance:
-    :param created:
-    :param kwargs:
-    :return:
-    """
-    if created:
-        Token.objects.create(user=instance)
+# @receiver(post_save, sender=)  # Django 信號機制
+# def generate_token(sender, instance=None, created=False, **kwargs):
+#     """
+#     創建桌號時自動生成Token
+#
+#     :param sender:
+#     :param instance:
+#     :param created:
+#     :param kwargs:
+#     :return:
+#     """
+#     if created:
+#         Token.objects.create(user=instance)
 
 
 class TableNumberSerializer(serializers.ModelSerializer):
