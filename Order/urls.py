@@ -1,9 +1,9 @@
 from django.urls import path
-from Order import views as order_view
+from .views import Order, Send
 
 
+# api/ +
 urlpatterns = [
-    path('order/', order_view.Order.as_view()),
-    path('tableNumbers/', order_view.TableNumber.as_view()),
-    path('send/', order_view.Send.as_view()),
+    path('order/', Order.as_view()),
+    path('send/', Send.as_view()),
 ]

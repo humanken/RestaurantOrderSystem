@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.documentation import include_docs_urls
 from Menu import views as menu_view
+from TableNumber import views as tb_view
 
 
 urlpatterns = [
@@ -25,6 +26,8 @@ urlpatterns = [
     path('', menu_view.menu_order_view),
     path('waiting/<int:tb_number_id>', menu_view.waiting_view),
     path('error/', menu_view.error_view),
+    path('login/', tb_view.login_view),
+    path('api/', include('TableNumber.urls')),
     path('api/', include('Menu.urls')),
     path('api/', include('Order.urls')),
     path('api/docs/', include_docs_urls(title="SHABU API文檔", description="錢源火鍋 REST framework")),

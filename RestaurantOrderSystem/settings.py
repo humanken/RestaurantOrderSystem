@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',   # RESTful API
     'rest_framework.authtoken',     # DRF自帶的Token認證
+    'TableNumber',
     'Menu',
     'Order',
 ]
