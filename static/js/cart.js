@@ -149,13 +149,14 @@ import { OrderMealsManger } from "./meals.js";
     };
 
     /* 使用SweetAlert顯示訊息，文檔: https://sweetalert.js.org/guides/ */
-    let showAlertMessage = function (title, contentText, icon, btns, isDanger=false, callback) {
+    let showAlertMessage = function (title, contentText, icon, btns, isDanger= false, timer = null, callback) {
         swal({
             title: title,
             text: contentText,
             icon: icon,
             buttons: btns,
-            dangerMode: isDanger
+            dangerMode: isDanger,
+            timer: timer
         }).then((clickedBtn) => callback(clickedBtn))
     }
 
@@ -224,7 +225,11 @@ import { OrderMealsManger } from "./meals.js";
         let removeFinished = async function (isRemove) {
             if (isRemove) {
                 await OrderMealsManger.remove(tbNumberID, $tr.data('id'));
-                swal('餐點已刪除', {icon: 'success', buttons: false});
+                showAlertMessage(
+                    '餐點已刪除', null,
+                    'success', false, false, 2000,
+                    function () { showQuantity(); }
+                )
                 $tr.children('td').animate({ padding: 0 })
                     .wrapInner('<div />').children()
                     .slideUp(function () {
@@ -235,17 +240,13 @@ import { OrderMealsManger } from "./meals.js";
                             else { updateGrandTotalPrice(); }
                         }
                     });
-               setTimeout(function () {
-                   showQuantity();
-                   swal.close();
-               }, 2000);
             }
         }
 
         showAlertMessage(
             '確定刪除嗎?', `確定要刪除"${foodName}"餐點嗎?`,
             'warning', {cancel: '取消', confirm: '確定'}, true,
-            (isClick) => removeFinished(isClick)
+            null, (isClick) => removeFinished(isClick)
         )
     })
 
@@ -254,22 +255,24 @@ import { OrderMealsManger } from "./meals.js";
         let totalQuantity = $('.num-cart').text()
         let sendFinished = async function (isSend) {
             if (isSend) {
-                swal('訂單已送出', {icon: 'success', buttons: false});
+                showAlertMessage(
+                    '訂單已送出', null,
+                    'success', false, false, 2000,
+                    function () {
+                        $('#' + idCartModel).modal('hide');
+                        window.location.href = waitingUrl;
+                    }
+                )
                 let totalPrice = $trs.last().text().split(' ')[2]
                 sendOrderMeals(totalQuantity, totalPrice)
                 await TableNumberManger.send(tbNumberID)
-                setTimeout(function () {
-                   swal.close();
-                   $('#' + idCartModel).modal('hide');
-                   window.location.href = waitingUrl
-                }, 2000);
             }
         };
 
         showAlertMessage(
             '確定要送出訂單嗎?', '',
             'warning', {cancel: '取消', confirm: '確定'}, false,
-            (isClick) => sendFinished(isClick)
+            null, (isClick) => sendFinished(isClick)
         );
     })
 
