@@ -1,22 +1,7 @@
-from django.shortcuts import render
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import PotType, PotMeat, MenuModel
-
-
-# Create your views here.
-def menu_order_view(request):
-    return render(request, 'menu_order.html')
-
-
-def waiting_view(request, tb_number_id):
-    return render(request, 'wait_meals.html')
-
-
-def error_view(request):
-    return render(request, 'error.html')
 
 
 class MenuSerializer(serializers.ModelSerializer):

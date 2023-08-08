@@ -12,10 +12,6 @@ from .forms import LoginForm
 from .models import TableNumberModel
 
 
-def login_view(request):
-    return render(request, 'login.html')
-
-
 class Login(APIView):
 
     def post(self, request):
