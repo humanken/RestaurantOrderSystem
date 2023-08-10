@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import Http404
 from django.db.models import QuerySet
+from django.contrib.auth.models import AnonymousUser, User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth import authenticate, login
@@ -13,6 +14,16 @@ from .models import TableNumberModel
 
 
 class Login(APIView):
+
+    def get(self, request):
+        resp = {'status': 0, 'message': ''}
+        check_type = request.query_params.get('check')
+        if check_type == 'login':
+            resp['isLogin'] = False
+            if isinstance(request.user, User):
+                resp['isLogin'] = True
+            return Response(data=resp, status=status.HTTP_200_OK)
+        return Response(data=resp, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request):
         print(f'post: {request.data}')

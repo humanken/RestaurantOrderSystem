@@ -11,47 +11,58 @@
 </head>
 <body>
     <section>
-        <div class="box login">
-            <h2 class="text-center mt-1 mb-2">SHABU</h2>
-            <h3 class="text-center my-3">Login</h3>
-            <form class="mt-5">
-                <div class="tooltip-right" id="error-msg">
-                    <div class="inputBx form-group input-group" title="username-input">
-                        <div class="input-group-prepend">
-                            <img src="/static/images/username.png" style="margin-top: 0.1rem;">
-                        </div>
-                        <input type="text" name="username" class="form-control" placeholder="Username" id="id-username" required>
+        <div id="background-text">
+            <span style="font-size: 9vw; letter-spacing: 5px; font-style: italic">QuanYuan's</span>
+            <span style="font-size: 4vw; letter-spacing: 10px;">SHABU-SHABU</span>
+            <span style="font-size: 7vw; letter-spacing: 10px;">錢源日式涮涮鍋</span>
+        </div>
+        <div class="box" id="login" style="transform: rotateY(180deg);">
+            <h3 class="text-center my-3">登入</h3>
+            <div class="box-content">
+                <div class="tooltip-right error-msg">
+                    <div class="inputBx form-group" title="username-input">
+                        <img src="/static/images/username.png" style="margin-top: 0.4rem;">
+                        <input type="text" name="username" class="form-control" placeholder="帳號" id="id-username" required>
                     </div>
 
-                    <div class="inputBx form-group input-group" title="password-input">
-                        <div class="input-group-prepend">
-                            <img src="/static/images/lock.png" style="filter: invert(1); margin-top: 0.1rem;">
-                        </div>
-                        <input type="password" name="password" class="form-control" placeholder="Password" id="id-password" required>
+                    <div class="inputBx form-group" title="password-input">
+                        <img src="/static/images/lock.png" style="filter: invert(1); margin-top: 0.4rem;">
+                        <input type="password" name="password" class="form-control" placeholder="密碼" id="id-password" required>
                     </div>
 
                     <span class="tooltiptext" style="visibility: hidden; opacity: 0;"></span>
                 </div>
                 <label class="show_password">
-                    <input type="checkbox"> Show password
+                    <input type="checkbox"> 顯示密碼
                 </label>
-                <div class="inputBx text-center mt-3">
-                    <input type="button" value="Login" name="login" id="submit">
+                <div class="inputBx text-center">
+                    <button class="btn btn-outline-primary btn-lg" name="box-submit">登入</button>
                 </div>
-            </form>
+            </div>
+        </div>
+        <div class="box" id="allocate-table-number" style="transform: rotateY(180deg);">
+            <h3 class="my-3">分配桌位</h3>
+            <div class="box-content">
+                <div class="tooltip-right error-msg">
+                    <input class="inputBx form-control" type="text" name="table-number" placeholder="請輸入桌號" id="id-table-number" required>
+                    <span class="tooltiptext" style="visibility: hidden; opacity: 0;"></span>
+                </div>
+                <div class="inputBx text-center">
+                    <button class="btn btn-outline-secondary btn-lg" name="box-submit">確定</button>
+                </div>
+            </div>
         </div>
     </section>
     <script type="text/javascript">
 
-        function showErrorMsg(message) {
-            let $errorMsg = $('#error-msg');
+        function showErrorMsg(boxID, message) {
+            const $errorMsg = $(`#${boxID}`).find('div.error-msg');
             $errorMsg.find('.tooltiptext').text(message).css({'visibility': 'visible', 'opacity': 1});
             $errorMsg.css({'border-width': '3px'});
             $errorMsg.find('div[title="password-input"]').attr('style', 'margin-bottom: 0.5rem');
         }
 
-        function closeErrorMsg() {
-            const $errorMsg = $('#error-msg');
+        function closeErrorMsg($errorMsg) {
             const $tooltip = $errorMsg.find('.tooltiptext');
             if ($tooltip.text()) {
                 $errorMsg.removeAttr('style');
@@ -74,23 +85,69 @@
                 }
                 let response = await fetch(location.origin + '/api/login/', params);
                 let data = await response.json();
-                if (!data.status) { showErrorMsg(data.message); }
+                if (!data.status) { showErrorMsg('login', data.message); }
                 else {
-                    swal({title: '登入成功', icon: 'success', button: false, timer: 2000});
+                    swal({title: '登入成功', icon: 'success', button: false, timer: 2000})
+                    .then(() => {
+                        history.pushState(null, null, location.origin + '/allocate');
+                        rotateTo('allocate-table-number');
+                    })
                 }
             }catch (error) {
                 console.log(`login error: ${error}`);
             }
         }
 
-        $('#submit').on('click', function () {
-            let username = $('#id-username').val();
-            let password = $('#id-password').val();
-            login(username, password);
+        let isLogin = async function () {
+            // 是否已經登入帳號
+            try {
+                let apiUrl = new URL(location.origin + '/api/login/')
+                apiUrl.search = new URLSearchParams({'check': 'login'}).toString()
+                let response = await fetch(apiUrl)
+                let data = await response.json();
+                return data.isLogin
+            }catch (error) {
+                console.log(`login error: ${error}`);
+            }
+        }
+
+        function rotateTo(boxID) {
+            // 翻轉 指定box (login/allocate)
+            const $login = $('#login');
+            const $allocate = $('#allocate-table-number');
+            switch (boxID) {
+                case 'login':
+                    $login.css({'transform': 'rotateY(0deg)'});
+                    $allocate.css({'transform': 'rotateY(180deg)'});
+                    return
+                default:
+                    $login.css({'transform': 'rotateY(180deg)'});
+                    $allocate.css({'transform': 'rotateY(0deg)'});
+                    return
+            }
+        }
+
+        $(document).ready(async function() {
+            if (await isLogin()) { rotateTo('allocate-table-number');}
+            else { rotateTo('login'); }
         })
 
-        // 顯示密碼 切換 觸發
+        $('.box div.box-content button[name="box-submit"]').on('click', function(event) {
+            event.preventDefault();
+            // 執行 登入／分配桌位
+            const $box = $(this).closest('.box')
+            if ($box.attr('id') === 'login') {
+                let username = $('#id-username').val();
+                let password = $('#id-password').val();
+                login(username, password);
+            }
+            else {
+                console.log('confirm btn click');
+            }
+        })
+
         $('.show_password input').change(function (){
+            // 變更密碼輸入框 type = password / text
             const password = $('#id-password');
             // 若 選中狀態, 則 type 轉成 text, 顯示輸入的密碼
             if ($(this).prop('checked')){
@@ -101,8 +158,8 @@
             }
         });
 
-        $('.inputBx input').focus(function () {
-            closeErrorMsg();
+        $('.error-msg .inputBx input').focus(function () {
+            closeErrorMsg($(this).parent().parent());
         })
 
     </script>
