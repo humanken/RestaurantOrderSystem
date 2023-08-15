@@ -1,60 +1,84 @@
+import base64
 from django.shortcuts import render, get_object_or_404
 from django.http import Http404
 from django.db.models import QuerySet
 from django.contrib.auth.models import AnonymousUser, User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, get_user
 from rest_framework.views import APIView
 from rest_framework import status, serializers
 from rest_framework.response import Response
-from rest_framework.authtoken.models import Token
-from .forms import LoginForm
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.tokens import datetime_from_epoch, AccessToken
+from rest_framework_simplejwt.exceptions import TokenError
 from .models import TableNumberModel
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+
+    @classmethod
+    def get_token(cls, user):
+        token = super(CustomTokenObtainPairSerializer, cls).get_token(user=user)
+        return token
+
+    def validate(self, attrs):
+        try:
+            ori_data = super().validate(attrs=attrs)
+        except Exception as e:
+            error_msg = str(e)
+            if str(e) == "No active account found with the given credentials":
+                error_msg = "帳號或密碼錯誤"
+            raise serializers.ValidationError({'errors': error_msg})
+
+        return {
+            'status': True,
+            'message': '登入成功',
+            'token': ori_data
+        }
 
 
 class Login(APIView):
 
+    @staticmethod
+    def is_token_expired(request):
+        """
+        token 是否已過期
+
+        :param request:
+        :return:
+        """
+        authorization = request.META.get('HTTP_AUTHORIZATION', None)
+        token = authorization.split(' ')[1]
+        if token is None:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            AccessToken(token=token)
+            return False    # token未過期
+        except TokenError:
+            return True     # token已過期
+
     def get(self, request):
-        resp = {'status': 0, 'message': ''}
         check_type = request.query_params.get('check')
-        if check_type == 'login':
-            resp['isLogin'] = False
-            if isinstance(request.user, User):
-                resp['isLogin'] = True
-            return Response(data=resp, status=status.HTTP_200_OK)
-        return Response(data=resp, status=status.HTTP_400_BAD_REQUEST)
+        if check_type == 'token_exp':
+            if self.is_token_expired(request=request):
+                return Response(
+                    data={'status': False, 'message': '登入時間已超時，請重新登入'}
+                )
+            return Response(
+                data={'status': True, 'message': '目前已登入'},
+                status=status.HTTP_200_OK
+            )
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request):
-        print(f'post: {request.data}')
-        resp = {'status': 0, 'message': ''}
-        form = LoginForm(request.data)
-        if form.is_valid():
-            user = authenticate(request, username=request.data.get('username'), password=request.data.get('password'))
-            if user:
-                print(f'user: {user}')
-                resp['status'] = 1
-                return Response(data=resp, status=status.HTTP_200_OK)
-            else:
-                resp['message'] = '登入失敗'
-                return Response(data=resp)
-        resp['message'] = '帳號密碼格式錯誤'
-        return Response(data=resp)
-
-
-# @receiver(post_save, sender=)  # Django 信號機制
-# def generate_token(sender, instance=None, created=False, **kwargs):
-#     """
-#     創建桌號時自動生成Token
-#
-#     :param sender:
-#     :param instance:
-#     :param created:
-#     :param kwargs:
-#     :return:
-#     """
-#     if created:
-#         Token.objects.create(user=instance)
+        s_token = CustomTokenObtainPairSerializer(instance=User, data=request.data)
+        if s_token.is_valid():
+            return Response(data=s_token.validated_data, status=status.HTTP_200_OK)
+        return Response(data={'status': False, 'message': list(s_token.errors.values())[0][0]})
 
 
 class TableNumberSerializer(serializers.ModelSerializer):
@@ -68,6 +92,8 @@ class TableNumberSerializer(serializers.ModelSerializer):
 
 
 class TableNumber(APIView):
+    authentication_classes = [JWTAuthentication, ]
+    permission_classes = [IsAuthenticatedOrReadOnly, ]
 
     def get(self, request):
         """
@@ -99,16 +125,24 @@ class TableNumber(APIView):
         """
         添加 桌號
 
-        :param request: { 'tbNumber': 桌號(str), 'isSend': 是否送出訂單(Bool), 'checkOut': 是否離場(Bool) }
+        :param request: { 'tbNumber': 桌號(str) }
         """
+        user = request.user
+        tb_number = request.data.get('tbNumber')
         try:
-            get_object_or_404(TableNumberModel, number=request.data.get('tbNumber'), is_send=False, check_out=False)
+            get_object_or_404(TableNumberModel, number=tb_number, is_send=False, check_out=False)
         except Http404:
-            number_s = TableNumberSerializer(data=request.data)
+            if not isinstance(user, User):
+                return Response(data="Not Login, add table number error", status=status.HTTP_400_BAD_REQUEST)
+            number_s = TableNumberSerializer(data={'tbNumber': tb_number, 'isSend': False, 'checkOut': False})
             if number_s.is_valid():
-                number_s.save()
+                tbn_obj = number_s.save()
+                encode_params = base64.b64encode(
+                    f'tbNumberID={tbn_obj.id}'.encode('UTF-8')
+                ).decode('UTF-8')
+                url = f'{request.scheme}://{request.get_host()}/'
                 return Response(
-                    data=number_s.data,
+                    data={'url': f'{url}?{encode_params}', 'tbNumber': tbn_obj.number},
                     status=status.HTTP_200_OK
                 )
             else:
