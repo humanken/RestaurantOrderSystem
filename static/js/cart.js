@@ -1,9 +1,8 @@
-import { TableNumberManger } from "./table_number.js";
-import { OrderMealsManger } from "./meals.js";
+import { TableNumberManager, OrderMealsManager, MenuManager } from "./Manager.js";
 
 (async function ($) {
-    const tbNumberID = 1;
-    await TableNumberManger.checkRedirect(tbNumberID);
+    const tbNumberID = TableNumberManager.getIDFromAllocate();
+    await TableNumberManager.checkRedirect(tbNumberID);
 
     const sendApiUrl = location.origin + '/api/send/'
     const waitingUrl = location.origin + `/waiting/${tbNumberID}`
@@ -14,6 +13,7 @@ import { OrderMealsManger } from "./meals.js";
     const clsMealTotal = 'meal-total'
     const clsMealRemove = 'meal-remove'
 
+    /* 添加 購物車模板 */
     let drawTableModel = function () {
     $('body').append(
         '<div class="modal fade" id="' + idCartModel + '" aria-hidden="true" tabindex="-1"' +
@@ -41,6 +41,7 @@ import { OrderMealsManger } from "./meals.js";
     );
 }
 
+    /* 添加點餐資料 到 購物車內表格 */
     let drawTable = function (meals, meatDict) {
         const $cartTable = $('#' + idCartTable)
         $cartTable.empty()
@@ -112,22 +113,22 @@ import { OrderMealsManger } from "./meals.js";
 
     /* 更新購物車表格 */
     let updateCartTable = async function () {
-        let meals = OrderMealsManger.getOrderMeals(tbNumberID)
-        drawTable(await meals, await potMeatDict);
+        let meals = OrderMealsManager.getOrderMeals(tbNumberID)
+        drawTable(await meals, await MenuManager.getMeatDict());
         await updateGrandTotalPrice();
         await setFooterBtnStatus(await meals);
     }
 
     /* 更新累計金額 */
     let updateGrandTotalPrice = async function () {
-        let grandTotalPrice = OrderMealsManger.getGrandTotalPrice(tbNumberID)
+        let grandTotalPrice = OrderMealsManager.getGrandTotalPrice(tbNumberID)
         drawGrandTotalPrice(await grandTotalPrice)
     }
 
     /* 顯示購物車旁邊圖標的餐點總數量 */
     let showQuantity = async function (animate = false) {
         let $numCart = $('#cart .num-cart')
-        let total = await OrderMealsManger.getTotalQuantity(tbNumberID)
+        let total = await OrderMealsManager.getTotalQuantity(tbNumberID)
         $numCart.text(total);
         if (animate) {
             $numCart.toggleClass('animate');
@@ -176,6 +177,7 @@ import { OrderMealsManger } from "./meals.js";
         });
     }
 
+    /* 向後端請求（ 傳送點餐資料到Line ）的訊號 */
     let sendOrderMeals = async function (totalQuantity, totalPrice) {
         let params = {
             method: 'post',
@@ -195,10 +197,11 @@ import { OrderMealsManger } from "./meals.js";
 
     /* ------------------------------------------- Event -------------------------------------------------------- */
     $('#cart').click(async function () {
-        let meals = OrderMealsManger.getOrderMeals(tbNumberID)
-        let grandTotalPrice = OrderMealsManger.getGrandTotalPrice(tbNumberID)
+        // 顯示購物車
+        let meals = OrderMealsManager.getOrderMeals(tbNumberID)
+        let grandTotalPrice = OrderMealsManager.getGrandTotalPrice(tbNumberID)
         drawTableModel()
-        drawTable(await meals, await potMeatDict)
+        drawTable(await meals, await MenuManager.getMeatDict())
         drawGrandTotalPrice(await grandTotalPrice)
         setFooterBtnStatus(await meals)
         $("#" + idCartModel).modal('show');
@@ -210,7 +213,7 @@ import { OrderMealsManger } from "./meals.js";
         const quantity = $(this).val()
         // 更新 餐點總價格
         $tr.find(`.${clsMealTotal}`).text(` $ ${$tr.data('price') * quantity} `)
-        await OrderMealsManger.update(tbNumberID, $tr.data('id'), quantity)
+        await OrderMealsManager.update(tbNumberID, $tr.data('id'), quantity)
         await updateGrandTotalPrice()
         await showQuantity()
     })
@@ -224,7 +227,7 @@ import { OrderMealsManger } from "./meals.js";
 
         let removeFinished = async function (isRemove) {
             if (isRemove) {
-                await OrderMealsManger.remove(tbNumberID, $tr.data('id'));
+                await OrderMealsManager.remove(tbNumberID, $tr.data('id'));
                 showAlertMessage(
                     '餐點已刪除', null,
                     'success', false, false, 2000,
@@ -265,7 +268,7 @@ import { OrderMealsManger } from "./meals.js";
                 )
                 let totalPrice = $trs.last().text().split(' ')[2]
                 sendOrderMeals(totalQuantity, totalPrice)
-                await TableNumberManger.send(tbNumberID)
+                await TableNumberManager.send(tbNumberID)
             }
         };
 
@@ -279,14 +282,14 @@ import { OrderMealsManger } from "./meals.js";
     /* 每個餐點的加入購物車按鈕，觸發 */
     $(document).on('click', '#add-to-cart', async function () {
         let mealID = $(this).prevAll('select').find('option:selected').val()
-        let quantity = await OrderMealsManger.getQuantity(tbNumberID, mealID)
+        let quantity = await OrderMealsManager.getQuantity(tbNumberID, mealID)
         addToCartAnimation($(this));
         if (!quantity) {
             console.log('沒有這筆餐點，新增')
-            await OrderMealsManger.add(tbNumberID, mealID, 1)
+            await OrderMealsManager.add(tbNumberID, mealID, 1)
         } else {
             console.log('有這筆餐點，數量累加並更新')
-            await OrderMealsManger.update(tbNumberID, mealID, quantity + 1)
+            await OrderMealsManager.update(tbNumberID, mealID, quantity + 1)
         }
         await showQuantity(true)
     })
