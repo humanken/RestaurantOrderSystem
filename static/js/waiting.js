@@ -1,25 +1,11 @@
-import { TableNumberManger } from "./table_number.js";
-import { OrderMealsManger } from "./meals.js";
+import { TableNumberManager, OrderMealsManager, MenuManager } from "./Manager.js";
 
 (async function ($) {
     const potMeatApiUrl = location.origin + '/api/pot_meat/'
 
     // pop() 取得陣列最後一位
     const tbNumberID = location.href.split('/').pop()
-    const tbNumberData = TableNumberManger.getData({tbNumberID: tbNumberID})
-    
-    let getMeatApiData = async function () {
-        try {
-            // 獲取 response對象
-            let response = await fetch(potMeatApiUrl)
-            // 透過json()，取得response內資料
-            let data_json = await response.json()
-            console.log(data_json)
-            return data_json
-        }catch (error) {  // 捕獲異常 訊息
-            console.log(error)
-        }
-    }
+    const tbNumberData = TableNumberManager.getData({tbNumberID: tbNumberID})
 
     let countGrandTotalPrice = function (meals) {
         let total = 0;
@@ -34,9 +20,8 @@ import { OrderMealsManger } from "./meals.js";
         $('#tb-number').text(data.tbNumber);
     }
     
-    let drawTable = async function (tbNumberID) {
-        let mealsData = await OrderMealsManger.getOrderMeals(tbNumberID);
-        let meatDict = await getMeatApiData()
+    let drawTable = async function (mealsData) {
+        let meatDict = await MenuManager.getMeatDict();
         let $tbody = $('#modal-table').find('tbody')
     
         // 添加 點餐資料
@@ -75,8 +60,11 @@ import { OrderMealsManger } from "./meals.js";
     }
     
     $(document).ready(async function () {
+        let mealsData = await OrderMealsManager.getOrderMeals(tbNumberID);
+        console.log(`tbNumberID: ${tbNumberID}, data: ${mealsData}`)
+        if (mealsData.length === 0) { window.location.href = location.origin + '/error/'; }
         await drawTableNumber();
-        await drawTable(tbNumberID)
+        await drawTable(mealsData)
         // 顯示 modal
         $('#waiting-modal').modal('show');
     })
