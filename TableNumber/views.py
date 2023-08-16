@@ -10,9 +10,10 @@ from rest_framework.views import APIView
 from rest_framework import status, serializers
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.tokens import datetime_from_epoch, AccessToken
+from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
 from .models import TableNumberModel
 
@@ -40,7 +41,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         }
 
 
-class Login(APIView):
+class LoginWithToken(APIView):
 
     @staticmethod
     def is_token_expired(request):
@@ -54,7 +55,6 @@ class Login(APIView):
         token = authorization.split(' ')[1]
         if token is None:
             return Response(status=status.HTTP_403_FORBIDDEN)
-
         try:
             AccessToken(token=token)
             return False    # token未過期
@@ -62,14 +62,20 @@ class Login(APIView):
             return True     # token已過期
 
     def get(self, request):
+        """
+        判斷 token 是否過期
+
+        :param request:
+        :return: 已超時 -> status=True, 登入中 -> status=False
+        """
         check_type = request.query_params.get('check')
         if check_type == 'token_exp':
             if self.is_token_expired(request=request):
                 return Response(
-                    data={'status': False, 'message': '登入時間已超時，請重新登入'}
+                    data={'status': True, 'message': '已超時'}
                 )
             return Response(
-                data={'status': True, 'message': '目前已登入'},
+                data={'status': False, 'message': '可使用中'},
                 status=status.HTTP_200_OK
             )
         return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -79,6 +85,23 @@ class Login(APIView):
         if s_token.is_valid():
             return Response(data=s_token.validated_data, status=status.HTTP_200_OK)
         return Response(data={'status': False, 'message': list(s_token.errors.values())[0][0]})
+
+
+class ReLoginWithToken(TokenRefreshView):
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except TokenError as e:
+            if e.args[0] == 'Token is invalid or expired':
+                return Response(data={'status': False, 'message': e.args[0]})
+            raise serializers.ValidationError(e.args[0])
+
+        return Response(
+            data={'status': True, 'token': serializer.validated_data},
+            status=status.HTTP_200_OK
+        )
 
 
 class TableNumberSerializer(serializers.ModelSerializer):

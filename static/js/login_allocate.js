@@ -1,8 +1,6 @@
-import { tokenUrl, TableNumberManager, TokenManager } from "./Manager.js";
+import { TableNumberManager, TokenManager } from "./Manager.js";
 
 (async function ($) {
-
-    const loginApiUrl = '/api/login/';
 
     const idLoginBox = 'login';
     const idAllocateBox = 'allocate-table-number';
@@ -31,7 +29,8 @@ import { tokenUrl, TableNumberManager, TokenManager } from "./Manager.js";
 
     async function isLogin() {
         // token過期，則未登入
-        return !!await TokenManager.is_expired()
+        // let status = await TokenManager.is_expired();
+        return !await TokenManager.is_expired()
     }
 
     /* 顯示 錯誤訊息 */

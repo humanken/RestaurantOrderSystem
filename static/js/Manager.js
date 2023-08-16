@@ -5,7 +5,8 @@ const tbNumberApiUrl = location.origin + '/api/tableNumbers/'
 const orderMealsApiUrl = location.origin + '/api/order/'
 const waitingUrl = location.origin + `/waiting/`
 const errorUrl = location.origin + '/error/'
-export const tokenUrl = '/api/token/'
+const loginApiUrl = '/api/login/'
+const reLoginApiUrl = '/api/reLogin/'
 
 let potTypeDict;
 let potMeatDict;
@@ -265,7 +266,7 @@ export const TokenManager = class {
                     'username': username, 'password': password
                 })
             }
-            let response = await fetch(tokenUrl, params);
+            let response = await fetch(loginApiUrl, params);
             return await response.json()
         }catch (error) {
             console.log(`login error: ${error}`);
@@ -273,7 +274,12 @@ export const TokenManager = class {
     }
 
     static getFromSession = function () {
-        return sessionStorage.getItem('accessToken');
+        let access = sessionStorage.getItem('accessToken')
+        let refresh = sessionStorage.getItem('refreshToken')
+        if ((!access) || (!refresh)) { return null }
+        else {
+            return {access: access, refresh: refresh}
+        }
     }
     
     static save = function (access, refresh) {
@@ -281,19 +287,47 @@ export const TokenManager = class {
         sessionStorage.setItem('refreshToken', refresh)
     }
 
+    static update = async function (refresh) {
+        try {
+            let params = {
+                method: 'post',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `refresh=${refresh}`
+            }
+            let response = await fetch(reLoginApiUrl, params);
+            let data = await response.json();
+            if (data.status) {
+                TokenManager.save(data.token.access, data.token.refresh);
+                return true
+            } else { return false }
+        }catch (error) {
+            console.log(`refresh error: ${error}`)
+            return null
+        }
+    }
+
+    /* 向後端確認token狀態 (是否過期) */
     static is_expired = async function () {
         try {
-            let accessToken = TokenManager.getFromSession();
-            if (!accessToken) { return null }
+            let token = TokenManager.getFromSession();
+            // 沒有token資料，判定為已過期
+            if (!token) { return true }
+
+            // 向後端請求判斷token期限
             let params = {
-                method: 'get', headers: {'Authorization': `Bearer ${accessToken}`}
+                method: 'get', headers: {'Authorization': `Bearer ${token.access}`}
             }
-            let response = await fetch(tokenUrl + '?check=token_exp', params)
+            let response = await fetch(loginApiUrl + '?check=token_exp', params)
             let data = await response.json();
-            console.log(data.message)
-            return data.status
+            // status: true -> 已過期，更新
+            if (data.status) {
+                let update_status = await TokenManager.update(token.refresh);
+                // 刷新失敗，已過期
+                if (!update_status) { return true }
+            }
+            return false
         }catch (error) {
-            console.log(`login error: ${error}`);
+            console.log(`check is_expired error: ${error}`);
         }
     }
 
