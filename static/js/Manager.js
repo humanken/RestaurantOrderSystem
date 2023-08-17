@@ -1,10 +1,11 @@
-const menuApiUrl = location.origin + '/api/menu/'
-const potTypeApiUrl = location.origin + '/api/pot_type/'
-const potMeatApiUrl = location.origin + '/api/pot_meat/'
-const tbNumberApiUrl = location.origin + '/api/tableNumbers/'
-const orderMealsApiUrl = location.origin + '/api/order/'
-const waitingUrl = location.origin + `/waiting/`
-const errorUrl = location.origin + '/error/'
+const menuApiUrl = '/api/menu/'
+const potTypeApiUrl = '/api/pot_type/'
+const potMeatApiUrl = '/api/pot_meat/'
+const tbNumberApiUrl = '/api/tableNumbers/'
+const orderMealsApiUrl = '/api/order/'
+const loginUrl = '/login/'
+const waitingUrl = `/waiting/`
+const errorUrl = '/error/'
 const loginApiUrl = '/api/login/'
 const reLoginApiUrl = '/api/reLogin/'
 
@@ -57,11 +58,17 @@ export const TableNumberManager = class {
     }
 
     static add = async function (tbNumber) {
+        let tokenManager = await new TokenManager().init(true);
+        console.log('tokenManager: ', tokenManager)
         let params = {
             method: 'post',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${tokenManager.token.access}`
+            },
             body: JSON.stringify({'tbNumber': tbNumber})
         }
+        console.log('add table number params: ', params)
         try {
             // 獲取 response對象
             let response = await fetch(tbNumberApiUrl, params)
@@ -73,9 +80,13 @@ export const TableNumberManager = class {
     }
 
     static checkOut = async function (tbNumberID) {
+        let tokenManager = await new TokenManager().init(true);
         let params = {
             method: 'patch',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${tokenManager.token.access}`
+            },
             body: JSON.stringify({'tbNumberID': tbNumberID, 'checkOut': true})
         }
         try {
@@ -88,9 +99,13 @@ export const TableNumberManager = class {
     }
 
     static send = async function (tbNumberID){
+        let tokenManager = await new TokenManager().init(true);
         let params = {
             method: 'patch',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${tokenManager.token.access}`
+            },
             body: JSON.stringify({'tbNumberID': tbNumberID, 'isSend': true})
         }
         try {
@@ -103,9 +118,13 @@ export const TableNumberManager = class {
     }
 
     static remove = async function (tbNumberID) {
+        let tokenManager = await new TokenManager().init(true);
         let params = {
             method: 'delete',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${tokenManager.token.access}`
+            },
             body: JSON.stringify({'tbNumberID': tbNumberID})
         }
         try {
@@ -256,6 +275,35 @@ export const MenuManager = class {
 
 export const TokenManager = class {
 
+    init = async (isRedirect) => {
+        let data = {
+            'isLogin': false,
+            'token': null
+        }
+        let sessionToken = this._getFromSession();
+        if (!sessionToken) {
+            console.log('沒有token資料，請先登入');
+            if (isRedirect) { location.href = loginUrl; }
+            return data
+        }
+
+        if (!await this._isExpired(sessionToken.access)) {
+            data.isLogin = true
+            data.token = sessionToken
+            return data
+        }
+
+        if (await this._update(sessionToken.refresh)) {
+            data.isLogin = true
+            data.token = this._getFromSession();
+            return data
+        } else {
+            console.log('token資料已超時，請重新登入');
+            if (isRedirect) { location.href = loginUrl; }
+            return data
+        }
+    }
+
     static getFromApi = async function (username, password) {
         // 使用post方法向後端請求登入
         try {
@@ -273,7 +321,12 @@ export const TokenManager = class {
         }
     }
 
-    static getFromSession = function () {
+    static save = function (access, refresh) {
+        sessionStorage.setItem('accessToken', access)
+        sessionStorage.setItem('refreshToken', refresh)
+    }
+
+    _getFromSession = function () {
         let access = sessionStorage.getItem('accessToken')
         let refresh = sessionStorage.getItem('refreshToken')
         if ((!access) || (!refresh)) { return null }
@@ -281,13 +334,8 @@ export const TokenManager = class {
             return {access: access, refresh: refresh}
         }
     }
-    
-    static save = function (access, refresh) {
-        sessionStorage.setItem('accessToken', access)
-        sessionStorage.setItem('refreshToken', refresh)
-    }
 
-    static update = async function (refresh) {
+    _update = async function (refresh) {
         try {
             let params = {
                 method: 'post',
@@ -302,32 +350,23 @@ export const TokenManager = class {
             } else { return false }
         }catch (error) {
             console.log(`refresh error: ${error}`)
-            return null
+            return false
         }
     }
 
     /* 向後端確認token狀態 (是否過期) */
-    static is_expired = async function () {
+    _isExpired = async function (accessToken) {
         try {
-            let token = TokenManager.getFromSession();
-            // 沒有token資料，判定為已過期
-            if (!token) { return true }
-
             // 向後端請求判斷token期限
             let params = {
-                method: 'get', headers: {'Authorization': `Bearer ${token.access}`}
+                method: 'get', headers: {'Authorization': `Bearer ${accessToken}`}
             }
             let response = await fetch(loginApiUrl + '?check=token_exp', params)
             let data = await response.json();
-            // status: true -> 已過期，更新
-            if (data.status) {
-                let update_status = await TokenManager.update(token.refresh);
-                // 刷新失敗，已過期
-                if (!update_status) { return true }
-            }
-            return false
+            return !!data.status
         }catch (error) {
             console.log(`check is_expired error: ${error}`);
+            return true
         }
     }
 

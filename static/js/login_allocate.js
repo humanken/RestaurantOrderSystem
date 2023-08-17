@@ -18,7 +18,7 @@ import { TableNumberManager, TokenManager } from "./Manager.js";
                 TokenManager.save(data.token.access, data.token.refresh)
                 swal({title: '登入成功', icon: 'success', button: false, timer: 2000})
                 .then(() => {
-                    // history.pushState(null, null, location.origin + '/');
+                    history.pushState(null, null, location.origin + '/');
                     rotateTo(idAllocateBox);
                 })
             }
@@ -28,9 +28,9 @@ import { TableNumberManager, TokenManager } from "./Manager.js";
     }
 
     async function isLogin() {
-        // token過期，則未登入
-        // let status = await TokenManager.is_expired();
-        return !await TokenManager.is_expired()
+        // 判斷 登入狀態
+        let tokenManager = await new TokenManager().init(false)
+        return tokenManager.isLogin
     }
 
     /* 顯示 錯誤訊息 */
@@ -94,7 +94,10 @@ import { TableNumberManager, TokenManager } from "./Manager.js";
             *** 已登入 -> 翻轉allocate box;
             *** 未登入 -> 翻轉login box;
         */
-        if (await isLogin()) { rotateTo(idAllocateBox); }
+        if (await isLogin()) {
+            rotateTo(idAllocateBox);
+            history.pushState(null, null, location.origin + '/');
+        }
         else { rotateTo(idLoginBox); }
     })
 
@@ -115,7 +118,7 @@ import { TableNumberManager, TokenManager } from "./Manager.js";
         }
         else {
             let $tbNumberInput = $('#' + idTableNumberInput);
-            let data = await TableNumberManager.add($tbNumberInput);
+            let data = await TableNumberManager.add($tbNumberInput.val());
             $tbNumberInput.val('');
             showQRcodeModal(data.url, data.tbNumber);
             // showQRcodeModal('http://127.0.0.1:8000/?dGJOdW1iZXJJRD01', '5桌');
