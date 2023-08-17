@@ -1,21 +1,7 @@
-from django.shortcuts import render
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import PotType, PotMeat, MenuModel
-
-
-# Create your views here.
-def menu_order(request):
-    return render(request, 'menu_order.html')
-
-
-def waiting(request, tb_number_id):
-    return render(request, 'wait_meals.html')
-
-
-def error(request):
-    return render(request, 'error.html')
 
 
 class MenuSerializer(serializers.ModelSerializer):
@@ -26,7 +12,7 @@ class MenuSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class MenuView(APIView):
+class Menu(APIView):
 
     def get(self, request):
         menu_db = MenuModel.objects.all()
@@ -46,13 +32,13 @@ class MenuView(APIView):
         return Response(data=s.data, status=status.HTTP_200_OK)
 
 
-class PotTypeView(APIView):
+class PotTypeAPI(APIView):
     def get(self, request):
         pot_type = {tp.value[0]: tp.value[1] for tp in PotType}
         return Response(data=pot_type, status=status.HTTP_200_OK)
 
 
-class PotMeatView(APIView):
+class PotMeatAPI(APIView):
     def get(self, request):
         pot_meat = {meat.value[0]: meat.value[1] for meat in PotMeat}
         return Response(data=pot_meat, status=status.HTTP_200_OK)
