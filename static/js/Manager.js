@@ -2,6 +2,7 @@ const menuApiUrl = '/api/menu/'
 const potTypeApiUrl = '/api/pot_type/'
 const potMeatApiUrl = '/api/pot_meat/'
 const tbNumberApiUrl = '/api/tableNumbers/'
+const tbNumberUserApiUrl = '/api/tableNumbersUser/'
 const orderMealsApiUrl = '/api/order/'
 const loginUrl = '/login/'
 const waitingUrl = `/waiting/`
@@ -16,9 +17,9 @@ export const TableNumberManager = class {
 
     static getData = async function (params = {}) {
         try {
-            let apiUrl = new URL(tbNumberApiUrl)
-            apiUrl.search = new URLSearchParams(params).toString()
-            let response = await fetch(apiUrl)
+            let searchParams = new URLSearchParams(params).toString();
+            console.log(searchParams)
+            let response = await fetch(tbNumberApiUrl + '?' + searchParams)
             return await response.json()
         }catch (error) {  // 捕獲異常 訊息
             console.log(error)
@@ -59,7 +60,6 @@ export const TableNumberManager = class {
 
     static add = async function (tbNumber) {
         let tokenManager = await new TokenManager().init(true);
-        console.log('tokenManager: ', tokenManager)
         let params = {
             method: 'post',
             headers: {
@@ -71,7 +71,7 @@ export const TableNumberManager = class {
         console.log('add table number params: ', params)
         try {
             // 獲取 response對象
-            let response = await fetch(tbNumberApiUrl, params)
+            let response = await fetch(tbNumberUserApiUrl, params)
             // 透過json()，取得response內資料
             return await response.json()
         }catch (error) {  // 捕獲異常 訊息
@@ -80,13 +80,9 @@ export const TableNumberManager = class {
     }
 
     static checkOut = async function (tbNumberID) {
-        let tokenManager = await new TokenManager().init(true);
         let params = {
             method: 'patch',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${tokenManager.token.access}`
-            },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({'tbNumberID': tbNumberID, 'checkOut': true})
         }
         try {
@@ -99,13 +95,9 @@ export const TableNumberManager = class {
     }
 
     static send = async function (tbNumberID){
-        let tokenManager = await new TokenManager().init(true);
         let params = {
             method: 'patch',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${tokenManager.token.access}`
-            },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({'tbNumberID': tbNumberID, 'isSend': true})
         }
         try {
@@ -129,7 +121,7 @@ export const TableNumberManager = class {
         }
         try {
             // 獲取 response對象
-            let response = await fetch(tbNumberApiUrl, params)
+            let response = await fetch(tbNumberUserApiUrl, params)
             return await response
         }catch (error) {  // 捕獲異常 訊息
             console.log(`remove table number error: ${error}`)

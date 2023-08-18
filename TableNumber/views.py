@@ -6,10 +6,10 @@ from django.contrib.auth.models import AnonymousUser, User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth import authenticate, login, get_user
-from rest_framework.views import APIView
 from rest_framework import status, serializers
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -115,8 +115,6 @@ class TableNumberSerializer(serializers.ModelSerializer):
 
 
 class TableNumber(APIView):
-    authentication_classes = [JWTAuthentication, ]
-    permission_classes = [IsAuthenticatedOrReadOnly, ]
 
     def get(self, request):
         """
@@ -144,35 +142,6 @@ class TableNumber(APIView):
             return Response(data=s.data, status=status.HTTP_200_OK)
         return render(request, 'error.html')
 
-    def post(self, request):
-        """
-        添加 桌號
-
-        :param request: { 'tbNumber': 桌號(str) }
-        """
-        user = request.user
-        tb_number = request.data.get('tbNumber')
-        try:
-            get_object_or_404(TableNumberModel, number=tb_number, is_send=False, check_out=False)
-        except Http404:
-            if not isinstance(user, User):
-                return Response(data="Not Login, add table number error", status=status.HTTP_400_BAD_REQUEST)
-            number_s = TableNumberSerializer(data={'tbNumber': tb_number, 'isSend': False, 'checkOut': False})
-            if number_s.is_valid():
-                tbn_obj = number_s.save()
-                encode_params = base64.b64encode(
-                    f'tbNumberID={tbn_obj.id}'.encode('UTF-8')
-                ).decode('UTF-8')
-                url = f'{request.scheme}://{request.get_host()}/'
-                return Response(
-                    data={'url': f'{url}?{encode_params}', 'tbNumber': tbn_obj.number},
-                    status=status.HTTP_200_OK
-                )
-            else:
-                print(f'invalid: {number_s.errors}')
-                return Response(data=number_s.errors, status=status.HTTP_400_BAD_REQUEST)
-        return Response(data="table number in use", status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
     def patch(self, request):
         """
         部分更新 桌號 訂單是否送出/離場狀態
@@ -188,6 +157,37 @@ class TableNumber(APIView):
             number_s.save()
             return Response(data=number_s.data, status=status.HTTP_200_OK)
         return Response(data="table number patch invalid", status=status.HTTP_400_BAD_REQUEST)
+
+
+class TableNumberUser(APIView):
+    authentication_classes = [JWTAuthentication, ]
+    permission_classes = [IsAuthenticated, ]
+
+    def post(self, request):
+        """
+        添加 桌號
+
+        :param request: { 'tbNumber': 桌號(str) }
+        """
+        tb_number = request.data.get('tbNumber')
+        try:
+            get_object_or_404(TableNumberModel, number=tb_number, is_send=False, check_out=False)
+        except Http404:
+            number_s = TableNumberSerializer(data={'tbNumber': tb_number, 'isSend': False, 'checkOut': False})
+            if number_s.is_valid():
+                tbn_obj = number_s.save()
+                encode_params = base64.b64encode(
+                    f'tbNumberID={tbn_obj.id}'.encode('UTF-8')
+                ).decode('UTF-8')
+                url = f'{request.scheme}://{request.get_host()}/'
+                return Response(
+                    data={'url': f'{url}?{encode_params}', 'tbNumber': tbn_obj.number},
+                    status=status.HTTP_200_OK
+                )
+            else:
+                print(f'invalid: {number_s.errors}')
+                return Response(data=number_s.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(data="table number in use", status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def delete(self, request):
         """
