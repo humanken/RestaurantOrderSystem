@@ -2,10 +2,7 @@ import base64
 from django.shortcuts import render, get_object_or_404
 from django.http import Http404
 from django.db.models import QuerySet
-from django.contrib.auth.models import AnonymousUser, User
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django.contrib.auth import authenticate, login, get_user
+from django.contrib.auth.models import User
 from rest_framework import status, serializers
 from rest_framework.views import APIView
 from rest_framework.response import Response
