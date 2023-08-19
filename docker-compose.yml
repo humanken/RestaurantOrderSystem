@@ -5,8 +5,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: "ordersystem_web:1.0"
     ports:
-      - "8000:80"
+      - "80:8000"
     volumes:
       - .:/app
     command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
@@ -15,5 +16,6 @@ services:
 
   db:
     image: "sqlite3:latest"
+    container_name: "ordersystem_db:1.0"
     ports:
       - "3306:3306"
