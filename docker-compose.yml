@@ -1,29 +1,37 @@
 version: "3"
 
 services:
+
+  db:
+    image: "mysql:8.0.27"
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=0317
+      - MYSQL_DATABASE=OrderSystemDB
+      - MYSQL_USER=ken
+      - MYSQL_PASSWORD=20010317
+    container_name: "ordersystem_db_v1.0"
+    volumes:
+      - /mnt/storage/mysql:/var/lib/mysql
+    ports:
+      - 33065:3306
+    expose:
+      - 3306
+
   web:
     build:
       context: /mnt/storage/projects/RestaurantOrderSystem
       dockerfile: Dockerfile
     container_name: "ordersystem_web_v1.0"
     ports:
-      - "80:8000"
+      - 80:8000
     volumes:
       - /mnt/storage/projects/RestaurantOrderSystem:/app
+    environment:
+      - MYSQL_NAME=OrderSystemDB
+      - MYSQL_USER=ken
+      - MYSQL_PASSWORD=20010317
     command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
     depends_on:
       - db
 
-  db:
-    image: "mysql:latest"
-    restart: always
-    environment:
-      MYSQL_DATABBASE: "OrderSystemDB"
-      MYSQL_USER: "ken"
-      MYSQL_PASSWORD: "0317"
-      MYSQL_ROOT_PASSWORD: "0317"
-    container_name: "ordersystem_db_v1.0"
-    volumes:
-      - /mnt/storage/mysql:/var/lib/mysql
-    ports:
-      - "33065:3306"

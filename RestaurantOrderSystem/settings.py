@@ -82,10 +82,10 @@ WSGI_APPLICATION = 'RestaurantOrderSystem.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'OrderSystemDB',
-        'USER': 'ken',
-        'PASSWORD': '0317',
-        'HOST': 'localhost',
+        'NAME': os.environ.get('MYSQL_NAME'),
+        'USER': os.environ.get('MYSQL_USER'),
+        'PASSWORD': os.environ.get('MYSQL_PASSWORD'),
+        'HOST': 'db',
         'PORT': '3306'
     }
 }
