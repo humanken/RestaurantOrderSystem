@@ -3,13 +3,13 @@ version: "3"
 services:
   web:
     build:
-      context: .
+      context: /mnt/storage/projects/RestaurantOrderSystem
       dockerfile: Dockerfile
-    container_name: "ordersystem_web:1.0"
+    container_name: "ordersystem_web_v1.0"
     ports:
       - "80:8000"
     volumes:
-      - .:/app
+      - /mnt/storage/projects/RestaurantOrderSystem:/app
     command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
     depends_on:
       - db
@@ -24,6 +24,6 @@ services:
       MYSQL_ROOT_PASSWORD: "0317"
     container_name: "ordersystem_db_v1.0"
     volumes:
-      - /mnt/Ken/Ken/docker-compose/storage/ordersystem-data:/var/lib/mysql
+      - /mnt/storage/mysql:/var/lib/mysql
     ports:
       - "33065:3306"
