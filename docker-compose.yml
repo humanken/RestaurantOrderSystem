@@ -15,7 +15,15 @@ services:
       - db
 
   db:
-    image: "sqlite3:latest"
-    container_name: "ordersystem_db:1.0"
+    image: "mysql:latest"
+    restart: always
+    environment:
+      MYSQL_DATABBASE: "OrderSystemDB"
+      MYSQL_USER: "ken"
+      MYSQL_PASSWORD: "0317"
+      MYSQL_ROOT_PASSWORD: "0317"
+    container_name: "ordersystem_db_v1.0"
+    volumes:
+      - /mnt/Ken/Ken/docker-compose/storage/ordersystem-data:/var/lib/mysql
     ports:
-      - "3306:3306"
+      - "33065:3306"
